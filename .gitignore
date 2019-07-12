@@ -5,6 +5,7 @@ tcl/**
 __pycache__/**
 tests/__pycache__/**
 lambda_function.zip
+tests/s3/**
 *.bat
 *.docx
 *.xlsx
