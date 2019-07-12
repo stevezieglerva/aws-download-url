@@ -3,6 +3,7 @@ import os
 import traceback
 import logging
 import structlog
+import boto3
 from urllib.parse import urlparse
 
 
@@ -65,9 +66,10 @@ def get_key_from_url(file_url):
 	key = parts.path.replace("/" + bucket_name + "/", "")
 	return key
 
-def create_s3_text_file(bucket, key, file_text, s3_boto):
+def create_s3_text_file(bucket, key, file_text):
+	s3 = boto3.resource("s3")
 	file_text_binary = bytes(file_text, 'utf-8')
-	object = s3_boto.Object(bucket, key)
+	object = s3.Object(bucket, key)
 	response = object.put(Body=file_text_binary)
 	return response
 

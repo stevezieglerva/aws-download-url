@@ -6,6 +6,9 @@ import structlog
 import os
 import json
 import sys
+import requests
+import re
+from S3TextFromLambdaEvent import *
 
 def lambda_handler(event, context):
 	try:
@@ -18,30 +21,21 @@ def lambda_handler(event, context):
 		if "text_logging" in os.environ:
 			log = structlog.get_logger()
 		else:
-			log = setup_logging("!Update me with Lambda name!", event, aws_request_id)
-
-		print("Started")
+			log = setup_logging("aws-download-url", event, aws_request_id)
 
 
-			# CSV format
-			quoted_filename = "\"" + dest_file + "\""
-			quoted_text = "\"" + text + "\""
-			quoted_project =  "\"" + project + "\""
-			quoted_raw_filename =  "\"" + raw_filename + "\""
-			quoted_file_ext =  "\"" + file_ext + "\""
-			csv_line = "{}, {}, {}, {}, {}\n".format(quoted_filename, quoted_text, quoted_project, quoted_raw_filename, quoted_file_ext)
-			response = stream_firehose_string("code-index-files-csv", csv_line)
-
-			# Elasticsearch bulk format
-			index_header = "{\"index\": {\"_index\": \"code-index\", \"_type\": \"doc\"}}"
-			index_data = {"filename" : dest_file, "file_text" : text, "raw_filename" : raw_filename, "file_extension" : file_ext, "project" : project}
-			index_data = add_timestamps_to_event(index_data)
-			response = stream_firehose_string("code-index-files-es-bulk", index_header + "\n" + json.dumps(index_data) + "\n")
-
-
-
-
-		print("Finished")
+		for records in event["Records"]:
+			message = json.loads(records["Sns"]["Message"])
+			print(message)
+			url = message["data"]
+			res = download_page(url)
+			status_code = res.status_code
+			print(str(res.status_code) + "-" + url)
+			result = {"processing_type" : "async download urls", "url" : url, "status_code" : res.status_code, "length" : len(res.text)}
+			log.critical("processed url", result=result)
+			filename = re.sub(r"[^a-zA-Z0-9-_]", "_", url) + ".html"
+			create_s3_text_file("svz-aws-download-webpages", "output/" + filename, res.text)
+			print("Finished")
 
 	except Exception as e:
 		print("Exception: "+ str(e))
@@ -82,3 +76,9 @@ def setup_logging(lambda_name, lambda_event, aws_request_id):
 	log.critical("started", input_events=json.dumps(lambda_event, indent=3))
 
 	return log
+
+
+def download_page(url):
+	res = requests.get(url, allow_redirects=True, timeout=10)
+	return res
+
