@@ -15,7 +15,7 @@ event = {
         "MessageId": "95df01b4-ee98-5cb9-9903-4c221d41eb5e",
         "TopicArn": "arn:aws:sns:us-east-1:123456789012:ExampleTopic",
         "Subject": "example subject",
-        "Message": "{\"data\" : \"https://www.cnn.com\"}",
+        "Message": "{\"line\" : \"https://www.cnn.com\"}",
         "Timestamp": "1970-01-01T00:00:00.000Z",
         "SignatureVersion": "1",
         "Signature": "EXAMPLE",

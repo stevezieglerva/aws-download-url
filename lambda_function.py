@@ -27,7 +27,7 @@ def lambda_handler(event, context):
 		for records in event["Records"]:
 			message = json.loads(records["Sns"]["Message"])
 			print(message)
-			url = message["data"]
+			url = message["line"]
 			res = download_page(url)
 			status_code = res.status_code
 			print(str(res.status_code) + "-" + url)
